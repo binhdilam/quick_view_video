@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html class="light" lang="vi">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Binhsoivid - Kinetic Video Gallery</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+  tailwind.config = {
+    darkMode: "class",
+    theme: {
+      extend: {
+        colors: {
+          "primary-fixed": "#ffdada",
+          "surface": "#f9f9fa",
+          "on-surface-variant": "#5d3f40",
+          "surface-container": "#eeeeef",
+          "primary-container": "#e51146",
+          "outline-variant": "#e6bcbd",
+          "surface-container-low": "#f3f3f4",
+          "primary-fixed-dim": "#ffb3b6",
+          "outline": "#916e6f",
+          "on-primary": "#ffffff",
+          "primary": "#ba0035",
+          "on-primary-container": "#fffbff",
+          "on-background": "#1a1c1d",
+          "surface-dim": "#dadadb",
+          "surface-variant": "#e2e2e3",
+          "surface-container-lowest": "#ffffff",
+          "background": "#f9f9fa",
+          "surface-container-high": "#e8e8e9",
+          "on-surface": "#1a1c1d",
+          "surface-bright": "#f9f9fa",
+          "secondary": "#ab3141",
+          "surface-container-highest": "#e2e2e3",
+          "inverse-surface": "#2f3132"
+        },
+        fontFamily: {
+          "headline": ["Plus Jakarta Sans"],
+          "body": ["Plus Jakarta Sans"],
+          "label": ["Plus Jakarta Sans"]
+        },
+        borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+      },
+    },
+  }
+</script>
+<style>
+  body { font-family: 'Plus Jakarta Sans', sans-serif; }
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+  .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+  .glass-overlay { backdrop-filter: blur(16px); background: rgba(255,255,255,0.7); }
+  .video-card { animation: cardIn 0.4s cubic-bezier(0.22,1,0.36,1) both; }
+  @keyframes cardIn {
+    from { opacity:0; transform: translateY(24px) scale(0.97); }
+    to   { opacity:1; transform: translateY(0) scale(1); }
+  }
+  .shimmer {
+    background: linear-gradient(90deg, #e8e8e9 25%, #f3f3f4 50%, #e8e8e9 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.4s infinite;
+  }
+  @keyframes shimmer { to { background-position: -200% 0; } }
+  .tab-active { background: #ba0035 !important; color: #fff !important; }
+  @keyframes live-pulse { 0%,100% { opacity:1; } 50% { opacity:0.4; } }
+  .live-dot { animation: live-pulse 1.2s ease-in-out infinite; }
+  .remove-btn { opacity:0; transition: opacity .2s; }
+  .video-card:hover .remove-btn { opacity:1; }
+  @keyframes fadeIn { from{opacity:0} to{opacity:1} }
+  .empty-state { animation: fadeIn 0.5s ease both; }
+</style>
+</head>
+<body class="bg-surface text-on-surface selection:bg-primary-fixed-dim">
+ 
+<!-- TopNavBar -->
+<nav class="fixed top-0 left-0 right-0 z-40 bg-white flex justify-between items-center w-full px-6 py-3 border-b border-slate-100 font-['Plus_Jakarta_Sans'] text-sm tracking-tight">
+  <div class="flex items-center gap-8">
+    <span class="text-2xl font-bold text-[#ba0035] tracking-tighter">Binhsoivid</span>
+    <div class="hidden md:flex gap-6 items-center">
+      <a class="text-[#ba0035] border-b-2 border-[#ba0035] pb-1 font-semibold" href="#">Explore</a>
+      <a class="text-slate-600 hover:text-[#ba0035] transition-colors duration-200" href="#">Trending</a>
+      <a class="text-slate-600 hover:text-[#ba0035] transition-colors duration-200" href="#">Collections</a>
+    </div>
+  </div>
+  <div class="flex items-center gap-4">
+    <div class="hidden sm:flex items-center bg-surface-container px-3 py-1.5 rounded-full">
+      <span class="material-symbols-outlined text-outline text-sm">search</span>
+      <input id="searchInput" class="bg-transparent border-none focus:ring-0 text-xs w-48" placeholder="Search creators..." type="text"/>
+    </div>
+    <button class="scale-95 active:scale-90 transition-transform text-slate-600">
+      <span class="material-symbols-outlined">notifications</span>
+    </button>
+    <button class="scale-95 active:scale-90 transition-transform text-slate-600">
+      <span class="material-symbols-outlined">account_circle</span>
+    </button>
+  </div>
+</nav>
+ 
+<div class="flex pt-16 min-h-screen">
+ 
+  <!-- SideNavBar -->
+  <aside class="fixed left-0 top-16 h-[calc(100vh-4rem)] w-96 z-30 flex flex-col p-4 gap-4 bg-slate-50 border-r border-slate-100 font-['Plus_Jakarta_Sans'] text-sm font-medium overflow-y-auto no-scrollbar">
+    <div class="mb-2">
+      <h2 class="text-xl font-black text-[#ba0035] mb-1">Video Feed</h2>
+      <p class="text-xs text-on-surface-variant/70 uppercase tracking-widest font-bold">Paste TikTok links below</p>
+    </div>
+ 
+   <!-- Input Section -->
+<div class="flex flex-col gap-3 p-1">
+  
+  <textarea id="linkInput" 
+  onpaste="handlePaste(event)"
+  class="w-full h-[15.5rem] bg-surface-container-lowest border border-outline-variant focus:ring-2 focus:ring-primary/20 rounded-xl p-3 text-sm resize-none shadow-sm placeholder:text-outline/50 no-scrollbar whitespace-nowrap overflow-x-auto"
+  placeholder="Dán nhiều link TikTok, mỗi link 1 dòng nha"></textarea>
+
+  <button onclick="processLinks()" class="w-full bg-[#ba0035] hover:bg-red-700 text-white font-bold py-3 rounded-xl shadow-lg shadow-primary/10 active:scale-[0.98] transition-all flex items-center justify-center gap-2">
+    <span class="material-symbols-outlined text-[18px]">auto_fix</span>
+    Process
+  </button>
+
+  <div id="processStatus" class="hidden text-xs text-center py-1.5 px-3 rounded-lg font-medium"></div>
+
+</div>
+ 
+    <!-- Queue -->
+    <div id="queueSection" class="hidden flex-col gap-2">
+      <div class="flex items-center justify-between">
+        <span class="text-xs text-on-surface-variant uppercase tracking-widest font-bold">Queue (<span id="queueCount">0</span>)</span>
+        <button onclick="clearAll()" class="text-xs text-red-400 hover:text-red-600 font-semibold transition-colors">Clear all</button>
+      </div>
+      <div id="queueList" class="flex flex-col gap-1 max-h-44 overflow-y-auto no-scrollbar"></div>
+    </div>
+ 
+    <!-- Layout -->
+    <div class="flex flex-col gap-2">
+      <span class="text-xs text-on-surface-variant uppercase tracking-widest font-bold">Layout</span>
+      <div class="grid grid-cols-3 gap-1 bg-surface-container rounded-xl p-1">
+        <button onclick="setLayout(1)" id="lay1" class="tab-active text-xs font-bold py-2 rounded-lg transition-all">1×</button>
+        <button onclick="setLayout(2)" id="lay2" class="text-slate-500 text-xs font-bold py-2 rounded-lg transition-all hover:bg-white">2×</button>
+        <button onclick="setLayout(3)" id="lay3" class="text-slate-500 text-xs font-bold py-2 rounded-lg transition-all hover:bg-white">3×</button>
+      </div>
+    </div>
+ 
+    <!-- Volume -->
+    <div class="flex flex-col gap-2">
+      <span class="text-xs text-on-surface-variant uppercase tracking-widest font-bold">Master Volume</span>
+      <div class="flex items-center gap-2">
+        <span class="material-symbols-outlined text-outline text-[18px]">volume_down</span>
+        <input type="range" id="masterVolume" min="0" max="1" step="0.05" value="1.0" oninput="setMasterVolume(this.value)" class="flex-1 accent-[#ba0035]"/>
+        <span class="material-symbols-outlined text-outline text-[18px]">volume_up</span>
+      </div>
+    </div>
+ 
+    
+    <div class="mt-auto pt-4 border-t border-outline-variant/10 flex flex-col gap-1">
+      <a class="flex items-center gap-3 px-4 py-2 text-xs text-slate-500 hover:text-primary transition-colors" href="#">
+        <span class="material-symbols-outlined text-[18px]">help</span>Help
+      </a>
+      <a class="flex items-center gap-3 px-4 py-2 text-xs text-slate-500 hover:text-primary transition-colors" href="#">
+        <span class="material-symbols-outlined text-[18px]">shield</span>Privacy
+      </a>
+    </div>
+  </aside>
+ 
+  <!-- Main Content -->
+  <main class="ml-96 flex-grow p-8 bg-surface min-h-screen">
+    <div class="max-w-7xl mx-auto">
+ 
+      <div class="flex items-end justify-between mb-10">
+        <div>
+          <span class="text-primary font-bold text-xs tracking-widest uppercase">Curated Feed</span>
+          <h1 class="text-4xl font-extrabold tracking-tighter text-on-surface mt-1">Copyright by Binhdibui</h1>
+        </div>
+        <div class="flex gap-2">
+          <button onclick="setLayout(1)" class="p-2 rounded-full bg-surface-container-high text-on-surface-variant hover:bg-primary/10 transition-colors" title="1 cột">
+            <span class="material-symbols-outlined">view_stream</span>
+          </button>
+          <button onclick="setLayout(2)" class="p-2 rounded-full bg-surface-container-high text-on-surface-variant hover:bg-primary/10 transition-colors" title="2 cột">
+            <span class="material-symbols-outlined">grid_view</span>
+          </button>
+          <button onclick="setLayout(3)" class="p-2 rounded-full bg-surface-container-high text-on-surface-variant hover:bg-primary/10 transition-colors" title="3 cột">
+            <span class="material-symbols-outlined">dashboard</span>
+          </button>
+        </div>
+      </div>
+ 
+      <div id="videoGrid"></div>
+    </div>
+  </main>
+</div>
+ 
+<script>
+let videos = [];
+let currentLayout = 3;
+let masterVol = 0.8;
+ 
+function extractId(url) {
+  url = (url || '').trim();
+  let m = url.match(/\/video\/(\d+)/);
+  if (m) return m[1];
+  m = url.match(/(\d{15,20})/);
+  if (m) return m[1];
+  return null;
+}
+
+function extractUser(url){
+  let m = url.match(/@([^\/]+)/);
+  return m ? m[1] : "unknown";
+}
+function processLinks() {
+  const raw = document.getElementById('linkInput').value.trim();
+  if (!raw) return;
+  videos = []; // reset toàn bộ video cũ
+  const lines = raw.split(/[\n,]+/).map(l => l.trim()).filter(Boolean);
+  let added = 0, skipped = 0;
+  lines.forEach(line => {
+    const id = extractId(line);
+    if (!id) { skipped++; return; }
+    if (videos.find(v => v.id === id)) { skipped++; return; }
+    videos.push({ 
+  id, 
+  url: line, 
+  user: extractUser(line),
+  mp4: `https://tikwm.com/video/media/play/${id}.mp4` 
+});
+    added++;
+  });
+  const st = document.getElementById('processStatus');
+  if (added > 0) {
+    st.className = 'text-xs text-center py-1.5 px-3 rounded-lg font-medium bg-green-100 text-green-700';
+    st.textContent = `✓ Đã thêm ${added} video${skipped ? ` (${skipped} bỏ qua)` : ''}`;
+    setLayout(3);
+    renderAll(); renderQueue();
+  } else {
+    st.className = 'text-xs text-center py-1.5 px-3 rounded-lg font-medium bg-red-100 text-red-700';
+    st.textContent = skipped ? `Các link đã tồn tại hoặc không hợp lệ` : `Không tìm thấy link hợp lệ`;
+  }
+  st.classList.remove('hidden');
+  setTimeout(() => st.classList.add('hidden'), 3000);
+}
+ 
+function renderAll() {
+  const grid = document.getElementById('videoGrid');
+  if (videos.length === 0) {
+    grid.innerHTML = `
+      <div class="empty-state flex flex-col items-center justify-center py-32 gap-6 text-center">
+        <div class="w-24 h-24 rounded-3xl bg-[#ba0035]/10 flex items-center justify-center">
+          <span class="material-symbols-outlined text-[#ba0035] text-5xl" style="font-variation-settings: 'FILL' 1;">smart_display</span>
+        </div>
+        <div>
+          <h2 class="text-2xl font-extrabold text-on-surface tracking-tighter mb-2">Chưa có video nào</h2>
+          <p class="text-on-surface-variant text-sm max-w-xs">Dán link TikTok vào bên trái và nhấn <strong>Process</strong> để xem nhiều video cùng lúc!</p>
+        </div>
+        <div class="flex gap-2 flex-wrap justify-center">
+          <span class="bg-[#ba0035]/10 text-[#ba0035] text-xs font-semibold px-3 py-1.5 rounded-full">✦ Nhiều video cùng lúc</span>
+          <span class="bg-[#ba0035]/10 text-[#ba0035] text-xs font-semibold px-3 py-1.5 rounded-full">✦ Không watermark</span>
+          <span class="bg-[#ba0035]/10 text-[#ba0035] text-xs font-semibold px-3 py-1.5 rounded-full">✦ Tải về MP4</span>
+        </div>
+      </div>`;
+    return;
+  }
+ 
+  const colClass = currentLayout === 1
+  ? 'grid grid-cols-1 gap-8 justify-center'
+  : currentLayout === 2
+  ? 'grid grid-cols-2 gap-8 justify-center'
+  : 'grid grid-cols-3 gap-8 justify-center';
+ 
+  grid.className = colClass + ' justify-items-center';
+  grid.innerHTML = '';
+ 
+  videos.forEach((v, i) => {
+    const card = document.createElement('div');
+    card.className = 'video-card group relative flex flex-col';
+    card.style.animationDelay = `${i * 60}ms`;
+    card.dataset.id = v.id;
+ 
+    card.innerHTML = `
+      <div class="h-[711px] w-[400px] mx-auto rounded-2xl overflow-hidden relative bg-surface-container-highest shadow-xl shadow-on-surface/5 transition-transform duration-500 group-hover:-translate-y-1">
+        <div class="shimmer absolute inset-0 z-10 pointer-events-none" id="sh-${v.id}"></div>
+        <video id="vid-${v.id}" class="w-full h-full object-cover object-center bg-black" controls playsinline preload="metadata">
+          <source src="${v.mp4}" type="video/mp4"/>
+        </video>
+        <div class="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/60 pointer-events-none z-20"></div>
+        <div class="absolute top-3 left-3 right-3 flex items-center justify-between z-30 pointer-events-none">
+          
+          <span class="bg-black/40 text-white/80 text-[10px] font-mono px-2 py-0.5 rounded-full">#${v.id}</span>
+        </div>
+        <div class="absolute bottom-14 left-3 right-3 text-white z-30 pointer-events-none">
+          <p class="text-xs font-medium opacity-70 mb-0.5">@${v.user}</p>
+<h3 class="text-sm font-bold leading-tight truncate"></h3>
+        </div>
+          <span class="material-symbols-outlined text-[16px]">close</span>
+        </button>
+      </div>
+      <div class="flex items-center gap-2 mt-3 px-1">
+        <button onclick="togglePlay('${v.id}')" 
+class=" flex items-center justify-center gap-2 py-2 px-6 bg-[#ba0035]/10 hover:bg-[#ba0035]/20 text-[#ba0035] font-semibold text-xs rounded-xl transition-all active:scale-95">
+          <span class="material-symbols-outlined text-[16px]" id="pi-${v.id}" style="font-variation-settings:'FILL' 1;">play_arrow</span>
+          Xem
+        </button>
+        <button id="dl-${v.id}" onclick="downloadVideo('${v.url}', '${v.id}')" class="flex items-center justify-center gap-1 py-2 px-3 bg-surface-container-high hover:bg-surface-dim text-on-surface-variant font-bold text-xs rounded-xl transition-all active:scale-95" title="Tải về">
+  <span class="material-symbols-outlined text-[16px]">download</span>
+</button>
+        <button onclick="copyMp4('${v.mp4}')" class="flex items-center justify-center gap-1 py-2 px-3 bg-surface-container-high hover:bg-surface-dim text-on-surface-variant font-bold text-xs rounded-xl transition-all active:scale-95" title="Copy link"> 
+          <span class="material-symbols-outlined text-[16px]">content_copy</span>
+        </button>
+        <button onclick="copyId('${v.id}')" class="flex items-center justify-center gap-1 py-2 px-3 bg-surface-container-high hover:bg-surface-dim text-on-surface-variant font-bold text-xs rounded-xl transition-all active:scale-95" title="Copy ID">
+  <span class="material-symbols-outlined text-[16px]">tag</span>
+</button>
+        <a href="${v.url}" target="_blank" class="flex items-center justify-center gap-1 py-2 px-3 bg-surface-container-high hover:bg-surface-dim text-on-surface-variant font-bold text-xs rounded-xl transition-all active:scale-95" title="Mở tab mới">
+          <span class="material-symbols-outlined text-[16px]">open_in_new</span>
+        </a>
+      </div>`;
+ 
+    grid.appendChild(card);
+ 
+    // Bind video events after DOM insert
+    requestAnimationFrame(() => {
+      const el = document.getElementById(`vid-${v.id}`);
+      if (!el) return;
+      el.volume = masterVol;
+      el.addEventListener('loadeddata', () => {
+        const sh = document.getElementById(`sh-${v.id}`);
+        if (sh) sh.style.display = 'none';
+      });
+      el.addEventListener('play', () => {
+        const icon = document.getElementById(`pi-${v.id}`);
+        if (icon) icon.textContent = 'pause';
+      });
+      el.addEventListener('pause', () => {
+        const icon = document.getElementById(`pi-${v.id}`);
+        if (icon) icon.textContent = 'play_arrow';
+      });
+      el.addEventListener('error', () => {
+        const sh = document.getElementById(`sh-${v.id}`);
+        if (sh) {
+          sh.removeAttribute('class');
+          sh.style.cssText = 'position:absolute;inset:0;z-index:15;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.75);color:white;font-size:12px;text-align:center;padding:20px;border-radius:1rem;';
+          sh.innerHTML = `<div><div style="font-size:2.5rem;margin-bottom:8px">⚠️</div><div style="margin-bottom:8px;font-weight:600;">Không phát trực tiếp được</div><a href="https://tikwm.com/video/media/play/${v.id}.mp4" target="_blank" style="color:#fe2c55;text-decoration:underline;font-weight:700;">Mở link trực tiếp →</a></div>`;
+        }
+      });
+    });
+  });
+}
+ 
+function togglePlay(id) {
+  const el = document.getElementById(`vid-${id}`);
+  if (!el) return;
+  el.paused ? el.play() : el.pause();
+}
+ 
+function removeVideo(id) {
+  const el = document.getElementById(`vid-${id}`);
+  if (el) { el.pause(); el.src = ''; }
+  videos = videos.filter(v => v.id !== id);
+  renderAll(); renderQueue();
+}
+ 
+function clearAll() {
+  document.querySelectorAll('video').forEach(v => { v.pause(); v.src = ''; });
+  videos = [];
+  renderAll(); renderQueue();
+}
+ 
+function setMasterVolume(val) {
+  masterVol = parseFloat(val);
+  document.querySelectorAll('video').forEach(v => v.volume = masterVol);
+}
+ 
+function setLayout(n) {
+  currentLayout = n;
+  [1,2,3].forEach(i => {
+    const b = document.getElementById('lay' + i);
+    if (!b) return;
+    if (i === n) { b.classList.add('tab-active'); b.classList.remove('text-slate-500'); }
+    else { b.classList.remove('tab-active'); b.classList.add('text-slate-500'); }
+  });
+  renderAll();
+}
+ 
+function renderQueue() {
+  const sec = document.getElementById('queueSection');
+  const list = document.getElementById('queueList');
+  const cnt = document.getElementById('queueCount');
+  cnt.textContent = videos.length;
+  if (videos.length === 0) { 
+  sec.classList.add('hidden'); 
+  list.innerHTML = ''; // 🔥 thêm dòng này
+  return; 
+}
+  sec.classList.remove('hidden');
+  sec.style.display = 'flex';
+  list.innerHTML = videos.map((v, i) => `
+    <div class="flex items-center gap-2 px-3 py-2 bg-white rounded-xl shadow-sm text-xs hover:bg-red-50 transition-colors">
+      <span class="text-[#ba0035] font-bold text-[10px] w-5 text-center">${i+1}</span>
+      <span class="flex-1 font-mono text-on-surface-variant truncate">${v.id}</span>
+      <button onclick="removeVideo('${v.id}')" class="text-slate-400 hover:text-red-500 transition-colors">
+        <span class="material-symbols-outlined text-[14px]">close</span>
+      </button>
+    </div>`).join('');
+}
+ 
+function copyMp4(mp4) {
+  navigator.clipboard.writeText(mp4).then(() => {
+    const st = document.getElementById('processStatus');
+    st.className = 'text-xs text-center py-1.5 px-3 rounded-lg font-medium bg-green-100 text-green-700';
+    st.textContent = '✓ Đã copy link MP4!';
+    st.classList.remove('hidden');
+    setTimeout(() => st.classList.add('hidden'), 2000);
+  });
+}
+function copyId(id) {
+  navigator.clipboard.writeText(id).then(() => {
+    const st = document.getElementById('processStatus');
+    st.className = 'text-xs text-center py-1.5 px-3 rounded-lg font-medium bg-green-100 text-green-700';
+    st.textContent = '✓ Đã copy Video ID!';
+    st.classList.remove('hidden');
+    setTimeout(() => st.classList.add('hidden'), 2000);
+  });
+}
+function downloadVideo(url, id) {
+  const btn = document.getElementById(`dl-${id}`);
+
+  // đổi màu ngay khi click
+  btn.classList.remove('bg-surface-container-high', 'text-on-surface-variant');
+  btn.classList.add('bg-[#ba0035]/10', 'text-[#ba0035]');
+
+  btn.innerHTML = `
+    <span class="material-symbols-outlined text-[16px]">check</span>
+  `;
+
+  const a = document.createElement('a');
+  a.href = `/download?url=${encodeURIComponent(url)}`;
+  a.setAttribute('download', `tiktok_${id}.mp4`);
+
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+}
+ 
+document.getElementById('linkInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter' && e.ctrlKey) processLinks();
+});
+ document.getElementById('searchInput').addEventListener('input', function(e){
+  const val = e.target.value.toLowerCase();
+
+  document.querySelectorAll('.video-card').forEach(card=>{
+    const id = card.dataset.id;
+    const v = videos.find(x => x.id === id);
+    if (!v) return;
+
+    card.style.display = v.user.toLowerCase().includes(val) ? '' : 'none';
+  });
+});
+// Init
+setLayout(3);
+renderAll();
+function handlePaste(e) {
+  e.preventDefault();
+
+  const paste = (e.clipboardData || window.clipboardData).getData('text');
+  const ta = document.getElementById('linkInput');
+
+  if (ta.selectionStart !== ta.selectionEnd) {
+    // replace vùng được chọn
+    ta.setRangeText(paste, ta.selectionStart, ta.selectionEnd, 'start');
+  } else {
+    // thêm lên đầu
+    ta.value = paste + '\n' + ta.value;
+    ta.selectionStart = 0;
+    ta.selectionEnd = 0;
+  }
+
+  ta.scrollTop = 0;
+}
+</script>
+</body>
+</html>
+ 

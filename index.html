@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html class="light" lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Binhsoivid - Kinetic Video Gallery</title>
+
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@100..700,0..1" rel="stylesheet"/>
+
+<style>
+body { font-family: 'Plus Jakarta Sans', sans-serif; }
+.glass-overlay { backdrop-filter: blur(16px); background: rgba(255,255,255,0.7); }
+</style>
+</head>
+
+<body class="bg-surface text-on-surface">
+
+<!-- NAV -->
+<nav class="fixed top-0 left-0 right-0 z-40 bg-white flex justify-between items-center w-full px-6 py-3 border-b text-sm">
+  <span class="text-2xl font-bold text-[#ba0035]">Binhsoivid</span>
+</nav>
+
+<div class="flex pt-16 min-h-screen">
+
+<!-- SIDEBAR -->
+<aside class="fixed left-0 top-16 h-[calc(100vh-4rem)] w-72 p-4 bg-slate-50 border-r">
+
+  <h2 class="text-xl font-black text-[#ba0035] mb-2">Video Feed</h2>
+
+  <!-- INPUT -->
+  <textarea id="input"
+    class="w-full h-[7.5rem] rounded-xl p-3"
+    placeholder="Paste nhiều link TikTok, mỗi link 1 dòng"></textarea>
+
+  <button onclick="processTikTok()"
+    class="w-full mt-3 bg-[#ba0035] text-white py-3 rounded-xl font-bold">
+    Process
+  </button>
+
+</aside>
+
+<!-- MAIN -->
+<main class="ml-72 flex-grow p-8">
+
+  <div id="videoGrid"
+    class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+  </div>
+
+</main>
+
+</div>
+
+<!-- SCRIPT -->
+<script>
+
+// extract ID
+function extractVideoId(url) {
+  const match = url.match(/video\/(\d+)/);
+  return match ? match[1] : null;
+}
+
+// create card
+function createVideoCard(videoUrl, videoId) {
+  return `
+    <div class="flex flex-col gap-2">
+
+      <div class="aspect-[9/16] rounded-2xl overflow-hidden bg-black shadow-xl">
+        <video 
+          src="${videoUrl}" 
+          controls 
+          preload="metadata"
+          class="w-full h-full object-cover">
+        </video>
+      </div>
+
+      <p class="text-xs text-gray-500 break-all">
+        ID: ${videoId}
+      </p>
+
+    </div>
+  `;
+}
+
+// main function
+function processTikTok() {
+  const input = document.getElementById("input").value.trim();
+
+  if (!input) {
+    alert("Paste link TikTok!");
+    return;
+  }
+
+  const links = input.split("\n").map(l => l.trim()).filter(Boolean);
+
+  const grid = document.getElementById("videoGrid");
+
+  links.forEach(link => {
+    const videoId = extractVideoId(link);
+
+    if (!videoId) return;
+
+    const videoUrl = `https://tikwm.com/video/media/play/${videoId}.mp4`;
+
+    grid.insertAdjacentHTML("afterbegin", createVideoCard(videoUrl, videoId));
+  });
+
+  document.getElementById("input").value = "";
+}
+
+</script>
+
+</body>
+</html>
